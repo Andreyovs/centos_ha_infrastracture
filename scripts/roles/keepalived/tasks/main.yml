@@ -1,0 +1,38 @@
+---
+- name: Set keepalived
+  dnf:
+    name: "psmisc,keepalived"
+    state: present
+
+- name: Copy config keepalived
+  template:
+    src: keepalived.conf.j2
+    dest: /etc/keepalived/keepalived.conf
+
+- name: Restart keepalived
+  service:
+    name: keepalived
+    state: restarted
+    enabled: yes
+
+- name: Update sysctl setting - net.ipv4.ip_nonlocal_bind
+  sysctl:
+    name: 'net.ipv4.ip_nonlocal_bind'
+    value: '1'
+    state: present
+    reload: yes
+
+- name: Update sysctl setting - net.ipv4.ip_forward
+  sysctl:
+    name: 'net.ipv4.ip_forward'
+    value: '1'
+    state: present
+    reload: yes
+
+- name: Update systemd unit
+  copy:
+    src: "{{ item }}"
+    dest: /etc/systemd/system/
+    owner: root
+  with_fileglob:
+    - files/units/*

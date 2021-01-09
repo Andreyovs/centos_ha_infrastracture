@@ -1,0 +1,24 @@
+# {{ ansible_managed }}
+#
+# Bacula User Agent (or Console) Configuration File
+#
+
+
+
+# {{ ansible_managed }}
+
+{% if ansible_hostname == 'frontend1' %}
+Director {
+  Name = bacula-dir
+  DIRport = 9101
+  address = {{ frontend_ip }}
+  Password = "{{ bdirpass }}"
+{% elif ansible_hostname == 'sqlnode1' %}
+Director {
+  Name = bacula-dir
+  DIRport = 9101
+  address = {{ sqlnode_ip }}
+  Password = "{{ bdirpass }}"
+{% endif %}
+
+# unmanaged

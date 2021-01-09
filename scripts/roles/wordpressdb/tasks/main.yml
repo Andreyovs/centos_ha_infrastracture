@@ -1,0 +1,23 @@
+---
+- name: Create DB
+  mysql_db:
+    login_user: "{{ cluster_user }}"
+    login_password: "{{ cluster_passwd }}"
+    login_port: 3306
+    login_host: "sqlnode1"
+    name: "{{wordpressdb}}"
+    collation: utf8mb4_general_ci
+    encoding: utf8mb4
+
+- name: Create user
+  mysql_user:
+    login_user: "{{ cluster_user }}"
+    login_password: "{{ cluster_passwd }}"
+    login_port: 3306
+    login_host: "sqlnode1"
+    name:     "{{ wp_db_user }}"
+    password: "{{ wp_db_passwd }}"
+    priv:     "{{wordpressdb}}.*:ALL"
+    host: "%"
+    state: present
+

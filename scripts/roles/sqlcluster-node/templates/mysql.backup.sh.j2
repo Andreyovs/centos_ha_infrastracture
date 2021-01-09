@@ -1,0 +1,4 @@
+#!/bin/sh
+#dump databases
+CURRENTDATEONLY=`date "+%Y-%m-%d"`
+/usr/bin/mysqldump {{wordpressdb}} | gzip > /var/backups/mysql/{{wordpressdb}}-${CURRENTDATEONLY}.sql.gz

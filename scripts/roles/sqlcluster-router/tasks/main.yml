@@ -1,0 +1,43 @@
+---
+
+- name: Install mySQL-router
+  dnf:
+    name: mysql-router-community
+    enablerepo: mysql80-community
+    state: latest
+
+- name: Install mysqlsh
+  dnf:
+    name: mysql-shell
+    enablerepo: mysql80-community
+    state: latest
+
+- name: Set alias for mysqlsh
+  lineinfile:
+    dest: "/root/.bashrc"
+    create: yes
+    mode: 0644
+    line: 'alias check-cluster="mysqlsh {{cluster_user}}@sqlnode1:3306 -- cluster status"'
+    regexp: "^alias check-cluster="
+
+- name: Config mySQL-router
+  shell: echo '{{cluster_passwd}}' | mysqlrouter --bootstrap {{cluster_user}}@sqlnode1:3306 --user={{mysql_router_user}} --conf-use-sockets --force 
+  args:
+    creates: /etc/mysqlrouter/mysqlrouter.conf.bak
+
+- name: Start & Enable mySQL-router
+  systemd:
+    name: mysqlrouter
+    state: started
+    enabled: true
+
+- name: restart router
+  systemd:
+     name: mysqlrouter
+     state: restarted
+     enabled: true
+
+- name: Config mySQL-router
+  shell: netstat -an | grep 6446 >> /root/mysqlrouter.log
+
+

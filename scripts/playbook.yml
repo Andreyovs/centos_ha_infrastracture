@@ -1,0 +1,86 @@
+---
+- name: Common configs
+  hosts: all
+  become: yes
+  roles:
+    - common
+    - firewalld
+
+- name: Rsyslog & Backup
+  hosts: mon
+  become: yes
+  roles:
+    - apache
+    - sqlcluster-node
+    - rsyslog-server
+    - bacula-server
+
+- name: Make InnoDB Cluster nodes
+  hosts:
+    - sqlnode1
+    - sqlnode2
+    - sqlnode3
+  become: yes
+  roles:
+    - rsyslog-sender
+    - sqlcluster-node
+
+- name: Install InnoDB Cluster
+  hosts: frontend1
+  become: yes
+  roles:
+    - sqlcluster-setup
+
+- name: Install MySQL Routers
+  hosts:
+    - frontend1
+    - frontend2
+  become: yes
+  roles:
+    - sqlcluster-router
+    - rsyslog-sender
+
+- name: Install Frontend
+  hosts: frontend1
+  become: yes
+  roles:
+    - bacula-client
+    - apache
+    - redis
+    - wordpressdb
+    - wordpress
+    - php
+
+- name: Install frontend node 2
+  hosts: frontend2
+  become: yes
+  roles:
+    - apache
+    - redis
+    - wordpress
+    - php
+
+- name: Install haproxies
+  hosts:
+    - haproxy1
+    - haproxy2
+  become: yes
+  roles:
+    - ssl
+    - haproxy
+    - rsyslog-sender
+
+- name: Install keepalived
+  hosts:
+    - haproxy1
+    - haproxy2
+  become: yes
+  roles:
+    - keepalived
+
+- name: Make Mysql backup
+  hosts:
+    - sqlnode1
+  become: yes
+  roles:
+    - bacula-client

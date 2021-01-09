@@ -1,0 +1,30 @@
+try {
+  print('Checking nodes for cluster...\n');
+  shell.connect('{{cluster_user}}@sqlnode1:3306', "{{cluster_passwd}}")
+
+  dba.checkInstanceConfiguration()
+  dba.configureInstance()
+
+  shell.connect('{{cluster_user}}@sqlnode2:3306', "{{cluster_passwd}}")
+  dba.checkInstanceConfiguration()
+  dba.configureInstance()
+  
+  shell.connect('{{cluster_user}}@sqlnode3:3306', "{{cluster_passwd}}")
+  dba.checkInstanceConfiguration()
+  dba.configureInstance()
+
+  print('Setting up InnoDB cluster...\n');
+  shell.connect('{{cluster_user}}@sqlnode1:3306', "{{cluster_passwd}}")
+
+  var cluster = dba.createCluster("{{clusterName}}");
+  
+  print('Adding instances to the cluster.');
+  cluster.addInstance({user: "{{cluster_user}}", host: "sqlnode2", port: "3306", password: "{{cluster_passwd}}"}, {recoveryMethod: "clone"})
+  print('.');
+  cluster.addInstance({user: "{{cluster_user}}", host: "sqlnode3", port: "3306", password: "{{cluster_passwd}}"}, {recoveryMethod: "clone"})
+  print('.\nInstances successfully added to the cluster.');
+  print('\nInnoDB cluster deployed successfully.\n');
+  cluster.status();
+} catch(e) {
+  print('\nThe InnoDB cluster could not be created.\n\nError: ' + e.message + '\n');
+}

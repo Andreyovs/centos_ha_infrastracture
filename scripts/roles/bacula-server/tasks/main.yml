@@ -1,0 +1,102 @@
+---
+- name: Install Packages
+  dnf:
+    name: "bacula-director,bacula-storage,bacula-console,python3-mysqlclient"
+    state: latest
+
+- name: Create Database for bacula
+  mysql_db:
+    name: "{{ dbname }}"
+    state: present
+  ignore_errors: yes
+
+- name: bacula_user create
+  mysql_user:
+    name: "{{ bacula_user }}"
+    password: "{{ bacula_passwd }}"
+    priv: "bacula.*:ALL"
+    host: "localhost"
+    check_implicit_admin: true
+    state: present
+
+- name: Create Bacula MySQL table
+  command: /usr/libexec/bacula/drop_mysql_tables
+
+- name: Create Bacula MySQL table
+  command: /usr/libexec/bacula/make_bacula_tables mysql
+
+- name: Add bacula dir config
+  template:
+    src: ../templates/bacula-dir.conf.j2
+    dest: /etc/bacula/bacula-dir.conf
+
+- name: Add bacula storage config
+  template:
+    src: ../templates/bacula-sd.conf.j2
+    dest: /etc/bacula/bacula-sd.conf
+
+- name: Add bacula console config
+  template:
+    src: ../templates/bconsole.conf.j2
+    dest: /etc/bacula/bconsole.conf
+
+- name: Start and Enable bacula
+  service:
+    name: bacula-dir
+    state: started
+    enabled: yes
+
+- name: Start and Enable bacula
+  service:
+    name: bacula-sd
+    state: started
+    enabled: yes
+
+- name: DB Command Change
+  command: alternatives --set libbaccats.so /usr/lib64/libbaccats-mysql.so
+
+- name: Download WebAdmin
+  command: wget -O /tmp/bacula-web.tgz  https://github.com/bacula-web/bacula-web/releases/download/v{{bacula_web_ver}}/bacula-web-{{bacula_web_ver}}.tgz
+
+- name: Create dir for WebAdmin
+  command: mkdir -p /var/www/html/
+
+- name: Extract for WebAdmin
+  command: tar xvfz /tmp/bacula-web.tgz -C /var/www/html/
+
+- name: Delete archive
+  command: rm /tmp/bacula-web.tgz --force
+
+- name: Add bacula php config
+  template:
+    src: ../templates/config.php.j2
+    dest: /var/www/html/bacula-web/application/config/config.php
+
+- name: Add bacula web config
+  template:
+    src: ../templates/bacula-web.conf.j2
+    dest: /etc/httpd/conf.d/bacula-web.conf
+
+- name: Change owner of www dir
+  command: "chown -Rv apache: /var/www/html/bacula-web"
+
+- name: Change owner of config file dir
+  command: "chown -v apache: /var/www/html/bacula-web/application/config/config.php"
+
+- name: Apache restart
+  systemd:
+    name: httpd
+    state: restarted
+    enabled: true
+
+- name: Fix SeLinux 1
+  command: restorecon -R -v /var/www/html/bacula-web
+
+- name: Fix SeLinux 2
+  command: chcon -R -t httpd_sys_rw_content_t /var/www/html/bacula-web/application/views/cache
+
+- name: Apache restart
+  systemd:
+    name: httpd
+    state: restarted
+    enabled: true

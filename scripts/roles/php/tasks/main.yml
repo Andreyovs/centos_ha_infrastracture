@@ -1,0 +1,48 @@
+---
+- name: Copy vhosts.conf
+  template:
+    src: vhosts.conf
+    dest: /etc/httpd/conf.d/
+  run_once: true
+
+- name: Create a directory if it does not exist
+  file:
+    path: /etc/httpd/vhosts.d
+    state: directory
+    mode: "0755"
+
+- name: Create a directory www if it does not exist
+  file:
+    path: /var/www/html/wordpress/
+    state: directory
+    mode: "0755"
+
+- name: Copy vhosts.conf
+  template:
+    src: wp-project.org.conf
+    dest: /etc/httpd/vhosts.d/
+  run_once: true
+
+- name: Fix error with module mpm. The issue is that multiple Multi-Processing Modules
+  replace:
+      path: /etc/httpd/conf.modules.d/00-mpm.conf
+      regexp: 'LoadModule mpm_event_module'
+      replace: '#LoadModule mpm_event_module'
+
+- name: Fix erro with module mpm. The issue is that multiple Multi-Processing Modules
+  replace:
+      path: /etc/httpd/conf.modules.d/00-mpm.conf
+      regexp: 'LoadModule mpm_worker_module'
+      replace: '#LoadModule mpm_worker_module'
+
+
+- name: Copy httpd.conf
+  template:
+    src: httpd.conf
+    dest: /etc/httpd/conf/
+  run_once: true
+
+- name: Restart service httpd, in all cases
+  service:
+    name: httpd
+    state: restarted

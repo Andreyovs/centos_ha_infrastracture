@@ -1,0 +1,35 @@
+---
+ - name: install the bacula-client
+   dnf:
+    name: bacula-client
+    state: present
+  
+ - name: install the bacula-console
+   dnf:
+    name: bacula-console
+    state: present
+  
+ 
+ - name: bacula stop
+   systemd:
+     name: bacula-fd 
+     state: stopped
+
+ - name: Add bacula-fd config from template
+   template:
+     src: ../templates/bacula-fd.conf.j2
+     dest: /etc/bacula/bacula-fd.conf
+
+ - name: Add bconsole config from template
+   template:
+     src: ../templates/bconsole.conf.j2
+     dest: /etc/bacula/bconsole.conf
+
+ - name: bacula start
+   systemd:
+     name: bacula-fd 
+     state: restarted
+     enabled: true
+
+
+

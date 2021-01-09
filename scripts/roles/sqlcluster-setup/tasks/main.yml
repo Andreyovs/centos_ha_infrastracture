@@ -1,0 +1,23 @@
+---
+
+- name: Install mysqlsh
+  dnf:
+    name: mysql-shell
+    enablerepo: mysql80-community
+    state: latest
+
+- name: Copy setupCluster.js
+  template:
+    src: setupCluster.js.j2
+    dest: /root/setupCluster.js
+    owner: root
+    group: root
+    mode: '0600'
+  
+- name: Cluster install
+  command: mysqlsh --file setupCluster.js
+  args:
+    chdir: /root/
+    creates: /root/.mysqlsh/mysqlsh.log
+  run_once: true
+

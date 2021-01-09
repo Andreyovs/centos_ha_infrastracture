@@ -1,0 +1,17 @@
+---
+bdirpass: pwd12345
+compress: GZIP
+fdpass: pwd12345
+monserver: 192.168.10.2
+frontend_ip: 192.168.10.10
+sqlnode_ip: 192.168.10.31
+storpass: pwd12345
+labelformat: Vol-
+volretent: 180 days
+bacula_user: bacula_user
+bacula_passwd: baculapwd!1234A$76883IR
+dbname: bacula
+bacula_web_ver: 8.4.1
+conf_name:
+  - bacula-dir
+  - bacula-sd

@@ -1,0 +1,40 @@
+# Accept RELP messages from network
+
+# Default parameters for file output. Old-style global settings are not working with new-style actions
+module(load="builtin:omfile" FileOwner="syslog" FileGroup="adm" dirOwner="syslog"
+        dirGroup="adm" FileCreateMode="0640" DirCreateMode="0755")
+
+# Module to remove 1st space from message
+module(load="mmrm1stspace")
+
+# http://www.rsyslog.com/doc/v8-stable/configuration/input_directives/rsconf1_escapecontrolcharactersonreceive.html
+# Print recieved LF as-it-is, not like '\n'. For multi-line messages
+# Default: on
+$EscapeControlCharactersOnReceive off
+
+# модуль работы с unix socket
+module(load="imuxsock")
+
+# модуль работы с journald
+module(load="imjournal")
+
+# наш модуль для сбора данных по сети
+module(load="imtcp" MaxSessions="500")
+
+# активация модуля с назначением правил
+input(type="imtcp" port="514"  ruleset="remote")
+
+# темплейт для динамической записи в папку с именем хоста и с именем файла, соответствующему имени файла на клиенте
+template(name="RemoteHost" type="string" string="/var/log/%HOSTNAME%/%$.logpath%")
+
+# темплейт для записи изначального текста
+template(name="OnlyMsg" type="string" string="%msg:::drop-last-lf%\n")
+
+# непосредственно правила обработки
+ruleset(name="remote") {
+
+   # разбираем наши логи, выстраиваем правильный путь
+    set $.logpath = replace($programname, "__", "/");
+    action(type="omfile" 
+    dynaFile="RemoteHost" template="OnlyMsg")
+}

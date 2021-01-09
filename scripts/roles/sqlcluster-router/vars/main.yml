@@ -1,0 +1,7 @@
+---
+  mysql_root_password: root!1234pwdA$76883IR
+  cluster_user: cluster_user
+  cluster_passwd: clusterpwd!1234A$76883IR
+  mysql_router_user: mysqlrouter
+
+

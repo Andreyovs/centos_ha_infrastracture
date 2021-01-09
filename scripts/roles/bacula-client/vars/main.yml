@@ -1,0 +1,6 @@
+---
+frontend_ip: 192.168.10.10
+sqlnode_ip: 192.168.10.31
+bdirpass: pwd12345
+mysql_root_password: root!1234pwdA$76883IR
+wordpressdb: wpdb

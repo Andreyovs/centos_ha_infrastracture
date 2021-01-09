@@ -1,0 +1,84 @@
+---
+- name: Epel-repo
+  dnf:
+    name: epel-release
+    state: present
+
+- name: Install mySQL-repo
+  dnf:
+    name: "https://repo.mysql.com/mysql80-community-release-el8.rpm"
+    state: latest
+    disable_gpg_check: True
+
+- name: Disable base MYSQL repo
+  command: dnf module disable mysql -y
+
+- name: Setup common tools
+  dnf:
+    name: "zip,vim-enhanced,wget,ghostscript,postfix,git,facter,perl-File-FcntlLock,chrony,tzdata,python3,policycoreutils-python-utils,python3-pip,python3-urllib3,langpacks-en,glibc-all-langpacks,net-tools,telnet"
+    state: latest
+    validate_certs: False
+
+- name: Enable rsyslog repo
+  shell: wget http://rpms.adiscon.com/v8-stable/rsyslog.repo -P /etc/yum.repos.d/
+
+- name: install pymysql
+  shell: pip3 install pymysql
+
+- name: SELinux disable
+  selinux:
+    state: disabled
+
+- name: Change timezone
+  timezone:
+    name: Europe/Moscow
+
+- name: chrony conf
+  template:
+    src: chrony.conf.j2
+    dest: "/etc/chrony.conf"
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Restart chrony
+  service:
+    name: "chronyd"
+    state: restarted
+    enabled: yes
+
+- name: Change sysctl settings - vm.overcommit_memory
+  sysctl:
+    name: vm.overcommit_memory
+    value: "1"
+    state: present
+    reload: true
+    sysctl_file: /etc/sysctl.conf
+
+- name: Change sysctl settings - net.core.somaxconn
+  sysctl:
+    name: net.core.somaxconn
+    value: "65535"
+    state: present
+    reload: true
+    sysctl_file: /etc/sysctl.conf
+
+- name: disable transparent hugepages - copy service file
+  copy:
+    src: disable-transparent-huge-pages.service
+    dest: "/usr/lib/systemd/system/disable-transparent-huge-pages.service"
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Enable service disable-transparent-hugepages
+  service:
+    name: disable-transparent-huge-pages.service
+    enabled: true
+    state: started
+
+- name: Create symlink /usr/bin/gs
+  file:
+    src: /usr/bin/gs
+    dest: /usr/local/bin/gs
+    state: link

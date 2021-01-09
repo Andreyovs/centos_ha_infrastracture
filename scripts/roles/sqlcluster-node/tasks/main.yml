@@ -1,0 +1,88 @@
+---
+- name: Install mysqlsh
+  dnf:
+    name: mysql-shell
+    enablerepo: mysql80-community
+    state: latest
+
+- name: Install the mysql
+  dnf:
+    name: mysql-community-server
+    enablerepo: mysql80-community
+    state: latest
+
+- name: mySQL conf
+  template:
+    src: my.cnf.j2
+    dest: "/etc/my.cnf"
+    owner: root
+    group: root
+    mode: 0644
+
+- name: mySQL start
+  systemd:
+    name: mysqld
+    state: restarted
+    enabled: true
+
+- name: get root password
+  shell: "grep 'A temporary password is generated for root@localhost' /var/log/mysqld.log | awk -F ' ' '{print $(NF)}'"
+  register: root_password # save to variable
+
+- name: Sql query pwd upd
+  command: mysql -u root --password='{{root_password.stdout}}' --connect-expired-password   --execute="ALTER USER 'root'@'localhost' IDENTIFIED BY '{{ mysql_root_password }}'; FLUSH PRIVILEGES;"
+
+- name: cluster_user create
+  mysql_user:
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+    name: "{{ cluster_user }}"
+    password: "{{ cluster_passwd }}"
+    priv: "*.*:ALL,GRANT"
+    host: "%"
+    check_implicit_admin: true
+    state: present
+  when: >
+    ( ansible_hostname != 'mon' )
+
+- name: mySQL stop
+  systemd:
+    name: mysqld
+    state: stopped
+    enabled: true
+
+- name: mySQL my.cnf
+  template:
+    src: client.cnf.j2
+    dest: "/root/.my.cnf"
+    owner: root
+    group: root
+    mode: 0644
+
+- name: mySQL restart
+  systemd:
+    name: mysqld
+    state: restarted
+    enabled: true
+
+- name: Create Backup Dir
+  command: mkdir -p /var/backups/mysql/
+
+- name: Create Backup Script Dir
+  command: mkdir -p /var/backups/scripts/
+
+- name: mySQL backup
+  template:
+    src: mysql.backup.sh.j2
+    dest: "/var/backups/scripts/mysql.backup.sh"
+    owner: root
+    group: root
+    mode: 0770
+
+- name: mySQL backup cleaner
+  template:
+    src: mysql.backup.clear.sh.j2
+    dest: "/var/backups/scripts/mysql.backup.clear.sh"
+    owner: root
+    group: root
+    mode: 0770

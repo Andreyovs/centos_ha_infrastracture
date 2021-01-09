@@ -1,0 +1,59 @@
+---
+- name: Install httpd
+  dnf:
+    name: "httpd,openssl,mod_ssl"
+    state: present
+
+
+- name: Restart service httpd, in all cases
+  service:
+    name: httpd
+    state: restarted
+
+- name: Start & Enable Apache Server
+  service:
+    name: httpd
+    state: started
+    enabled: yes
+
+- name: Add Remi
+  dnf:
+    name: "https://rpms.remirepo.net/enterprise/remi-release-8.rpm"
+    state: present
+
+- name: Enable Remi
+  command: dnf module enable php:remi-7.4 -y
+  
+- name: Install common packs
+  dnf:
+    name: "php,php-devel,php-enchant,php-mbstring,php-mysql,php-PHPMailer,php-process,php-simplepie,php-xml,php-opcache,php-curl,php-gd,php-mcrypt,php-xmlrpc"
+    enablerepo: remi
+    state: present
+
+- name: Override php settings override
+  copy:
+    src: z_custom.ini
+    dest: /etc/php.d/z_custom.ini
+
+- name: Make upload_tmp_dir
+  file:
+    path: /var/lib/php/upload
+    state: directory
+
+- name: Change ownership of php-installation
+  file:
+    path: /var/lib/php/
+    owner: root
+    group: root
+    state: directory
+    recurse: yes
+
+- name: Setup hostname
+  shell: echo 127.0.0.1 wp-project.org >> /etc/hosts
+  tags:
+    - skip_ansible_lint
+
+- name: Restart service httpd
+  service:
+    name: httpd
+    state: restarted

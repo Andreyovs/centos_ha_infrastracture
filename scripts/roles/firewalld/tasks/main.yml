@@ -1,0 +1,90 @@
+---
+- name: Firewalld enable
+  service:
+    name: firewalld
+    state: started
+    enabled: yes
+
+- name: Firewalld open ports
+  firewalld:
+    port: "{{ item }}"
+    permanent: true
+    immediate: true
+    state: enabled
+  with_items:
+    - "22/tcp"
+    - "80/tcp"
+    - "6379/tcp"
+    - "6446/tcp"
+    - "64460/tcp"
+  when: >
+    ( ansible_hostname == 'frontend1' ) or
+    ( ansible_hostname == 'frontend2' )
+
+- name: Firewalld ports for mySQL
+  firewalld:
+    port: "{{ item }}"
+    permanent: true
+    immediate: true
+    state: enabled
+  with_items:
+    - "22/tcp"
+    - "3306/tcp"
+    - "33060/tcp"
+    - "33061/tcp"
+    - "42000/tcp"
+    - "42001/tcp"
+
+  when: >
+    ( ansible_hostname == 'sqlnode1' ) or
+    ( ansible_hostname == 'sqlnode2' ) or
+    ( ansible_hostname == 'sqlnode3' )
+
+- name: Firewalld ports for haproxy
+  firewalld:
+    port: "{{ item }}"
+    permanent: true
+    immediate: true
+    state: enabled
+  with_items:
+    - "22/tcp"
+    - "80/tcp"
+    - "443/tcp"
+    - "8080/tcp"
+  when: >
+    ( ansible_hostname == 'haproxy1' ) or
+    ( ansible_hostname == 'haproxy2' )
+
+- name: Firewalld ports for VRRP
+  firewalld:
+    rich_rule: rule protocol value="vrrp" accept
+    permanent: true
+    immediate: true
+    state: enabled
+  when: >
+    ( ansible_hostname == 'haproxy1' ) or
+    ( ansible_hostname == 'haproxy2' )
+
+- name: Firewalld ports 22/80/443/514
+  firewalld:
+    port: "{{ item }}"
+    permanent: true
+    immediate: true
+    state: enabled
+  with_items:
+    - "22/tcp"
+    - "80/tcp"
+    - "443/tcp"
+    - "514/tcp"
+    - "9101/tcp"
+    - "9103/tcp"
+  when: ansible_hostname == 'mon'
+
+- name: Firewalld ports 9102 fdPort for all
+  firewalld:
+    port: "{{ item }}"
+    permanent: true
+    immediate: true
+    state: enabled
+  with_items:
+    - "9102/tcp"
